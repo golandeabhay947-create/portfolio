@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Mail,
   ExternalLink,
@@ -9,13 +9,20 @@ import {
   Phone,
   Send,
   ChevronRight,
-  Link,
-  GitFork,
+  Sun,
+  Moon,
 } from 'lucide-react';
-import { achievements, certifications, education, profile, projects, skillGroups } from './portfolioData';
+import {
+  achievements,
+  certifications,
+  education,
+  profile,
+  projects,
+  skillGroups,
+} from './portfolioData';
 import './styles.css';
 
-/* ── Inline SVG brand icons (not in this lucide version) ── */
+/* ─── Inline SVG brand icons (not in this lucide version) ─────────────────── */
 function GitHubIcon({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -32,128 +39,269 @@ function LinkedInIcon({ size = 20 }) {
   );
 }
 
+/* ─── Theme hook ──────────────────────────────────────────────────────────── */
+function useTheme() {
+  const [theme, setTheme] = useState(() => {
+    // Initial value from localStorage, or OS preference
+    try {
+      const stored = localStorage.getItem('ag-theme');
+      if (stored) return stored;
+      return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'light') {
+      root.classList.add('light');
+    } else {
+      root.classList.remove('light');
+    }
+    try {
+      localStorage.setItem('ag-theme', theme);
+    } catch { /* ignore */ }
+  }, [theme]);
+
+  const toggle = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
+  return { theme, toggle };
+}
+
+/* ─── Fixed Left Sidebar ─────────────────────────────────────────────────── */
+function SideBar() {
+  return (
+    <aside className="side-bar" aria-label="Social links">
+      <a href={`mailto:${profile.email}`} className="side-icon" title="Email">
+        <Mail size={17} />
+      </a>
+      <a href={profile.linkedin} target="_blank" rel="noreferrer" className="side-icon" title="LinkedIn">
+        <LinkedInIcon size={17} />
+      </a>
+      <a href={profile.github} target="_blank" rel="noreferrer" className="side-icon" title="GitHub">
+        <GitHubIcon size={17} />
+      </a>
+      <div className="side-bar-spacer" />
+      <div className="side-bar-line" />
+      <div className="side-bar-label">Connect</div>
+    </aside>
+  );
+}
+
+/* ─── Nav items ──────────────────────────────────────────────────────────── */
 const navItems = [
-  { label: 'About', href: '#about' },
-  { label: 'Skills', href: '#skills' },
-  { label: 'Projects', href: '#projects' },
+  { label: 'About',      href: '#about' },
+  { label: 'Stack',      href: '#skills' },
   { label: 'Experience', href: '#experience' },
-  { label: 'Contact', href: '#contact' },
+  { label: 'Projects',   href: '#projects' },
+  { label: 'Contact',    href: '#contact' },
 ];
 
-
-function Navbar({ open, setOpen }) {
+/* ─── Navbar ─────────────────────────────────────────────────────────────── */
+function Navbar({ open, setOpen, theme, toggleTheme }) {
   const close = () => setOpen(false);
+
   return (
     <header className="navbar">
-      <div className="nav-inner shell">
+      <div className="nav-inner">
+        {/* Logo */}
         <a href="#top" className="nav-logo" onClick={close}>
-          AG<span className="accent">.</span>
+          <span className="nav-logo-arrow">&gt;</span>
+          Abhay Golande
         </a>
+
+        {/* Desktop nav links */}
         <nav className="nav-links" aria-label="Main navigation">
           {navItems.map((item) => (
             <a key={item.label} href={item.href} className="nav-link" onClick={close}>
               {item.label}
             </a>
           ))}
+        </nav>
+
+        {/* Right controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {/* Let's Connect CTA */}
+          <a href="#contact" className="nav-cta" onClick={close}>
+            Let&apos;s Connect
+          </a>
+
+          {/* Theme toggle */}
+          <button
+            className="theme-btn"
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+
+          {/* Resume download */}
           <a
             href="/Abhay_Golande_Resume_AI_Engineer.docx"
             download
-            className="btn btn-outline btn-sm"
-            onClick={close}
+            className="nav-resume-icon"
+            aria-label="Download Resume"
           >
-            Resume <Download size={13} />
+            <Download size={15} />
+            <span className="tooltip">Download Resume</span>
           </a>
-        </nav>
-        <button
-          className="hamburger"
-          aria-label={open ? 'Close menu' : 'Open menu'}
-          aria-expanded={open}
-          onClick={() => setOpen(!open)}
-        >
-          {open ? <X size={22} /> : <Menu size={22} />}
-        </button>
+
+          {/* Mobile hamburger */}
+          <button
+            className="hamburger"
+            aria-label={open ? 'Close menu' : 'Open menu'}
+            aria-expanded={open}
+            onClick={() => setOpen(!open)}
+          >
+            {open ? <X size={18} /> : <Menu size={18} />}
+          </button>
+        </div>
       </div>
+
+      {/* Mobile menu */}
       {open && (
-        <div className="mobile-menu shell">
+        <nav className="mobile-menu" aria-label="Mobile navigation">
           {navItems.map((item) => (
             <a key={item.label} href={item.href} className="mobile-link" onClick={close}>
-              {item.label} <ChevronRight size={15} />
+              {item.label} <ChevronRight size={13} />
             </a>
           ))}
+          {/* Theme toggle inside mobile menu */}
+          <button
+            className="mobile-link"
+            onClick={() => { toggleTheme(); }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px solid var(--border)', padding: '13px 0', width: '100%', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: 'var(--mono)', fontSize: '12px', fontWeight: 500, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--on-muted)' }}
+          >
+            {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+            {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+          </button>
           <a
             href="/Abhay_Golande_Resume_AI_Engineer.docx"
             download
             className="btn btn-primary mobile-resume"
             onClick={close}
           >
-            Download Resume <Download size={14} />
+            Download Resume <Download size={12} />
           </a>
-        </div>
+        </nav>
       )}
     </header>
   );
 }
 
+/* ─── Hero ───────────────────────────────────────────────────────────────── */
 function Hero() {
   return (
     <section id="top" className="hero shell">
-      <div className="hero-badge">
-        <span className="status-dot" />
-        Open to internship opportunities
+      {/* Left column */}
+      <div className="hero-left">
+        {/* Badge row */}
+        <div className="hero-badge-row">
+          <span className="hero-badge">AI Engineer · Full Stack Developer</span>
+          <span className="hero-badge-sep" />
+          <span className="hero-badge-status">SYSTEM_READY: TRUE</span>
+        </div>
+
+        {/* Name — primary visual anchor */}
+        <h1 className="hero-name">
+          ABHAY{' '}
+          <span className="accent">GOLANDE</span>
+        </h1>
+
+        {/* Summary */}
+        <p className="hero-summary">{profile.summary}</p>
+
+        {/* CTAs */}
+        <div className="hero-actions">
+          <a href="#projects" className="btn btn-primary">
+            View Selected Work <ExternalLink size={13} />
+          </a>
+          <a href={profile.github} target="_blank" rel="noreferrer" className="btn btn-outline">
+            GitHub Profile
+          </a>
+        </div>
       </div>
-      <h1 className="hero-name">Abhay Golande</h1>
-      <p className="hero-title">Software Engineer &amp; Full Stack Developer</p>
-      <p className="hero-summary">{profile.summary}</p>
-      <div className="hero-actions">
-        <a href="#projects" className="btn btn-primary">
-          View Projects
-        </a>
-        <a href="#contact" className="btn btn-outline">
-          Contact Me
-        </a>
-      </div>
-      <div className="hero-links">
-        <a href={profile.github} target="_blank" rel="noreferrer" className="icon-link" aria-label="GitHub">
-          <GitHubIcon size={20} />
-          <span>GitHub</span>
-        </a>
-        <a href={profile.linkedin} target="_blank" rel="noreferrer" className="icon-link" aria-label="LinkedIn">
-          <LinkedInIcon size={20} />
-          <span>LinkedIn</span>
-        </a>
-        <span className="icon-link">
-          <MapPin size={16} />
-          <span>{profile.location}</span>
-        </span>
+
+      {/* Right column — engineering workspace image */}
+      <div className="hero-right">
+        <div className="hero-glow" />
+        <div className="hero-image-frame">
+          <img
+            src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=900&q=80"
+            alt="Software engineering workspace with code on screen"
+            loading="eager"
+            decoding="async"
+          />
+          <div className="hero-image-caption">
+            <p>LOC: Pune, MH</p>
+            <p>UTC +5:30</p>
+          </div>
+        </div>
       </div>
     </section>
   );
 }
 
+/* ─── Stats Bar ──────────────────────────────────────────────────────────── */
+function StatsBar() {
+  return (
+    <div className="stats-bar shell">
+      <div className="stat-item">
+        <div className="stat-value">5+</div>
+        <div className="stat-label">Projects Shipped</div>
+        <p className="stat-desc">AI/ML, full-stack, and frontend projects delivered.</p>
+      </div>
+      <div className="stat-item">
+        <div className="stat-value">9.33</div>
+        <div className="stat-label">CGPA / 10</div>
+        <p className="stat-desc">IIIT Pune — B.E. Information Technology, expected 2027.</p>
+      </div>
+      <div className="stat-item">
+        <div className="stat-value">AI + FS</div>
+        <div className="stat-label">Specialization</div>
+        <p className="stat-desc">Building AI-powered automation and full-stack applications.</p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── About ──────────────────────────────────────────────────────────────── */
 function About() {
   return (
     <section id="about" className="section shell">
-      <div className="section-label">About</div>
-      <div className="about-grid">
+      <div className="section-divider">
         <div>
-          <h2 className="section-title">Who I am</h2>
-          <p className="body-text">
-            I'm a B.E. Information Technology student at IIIT Pune, building AI-powered and
-            full-stack applications. My work spans computer vision, model training and evaluation,
-            RESTful API design, JWT authentication, and MVC architecture.
-          </p>
-          <p className="body-text">
-            I'm seeking an AI Engineer, ML, GenAI, or full-stack internship role where I can
-            contribute to production-grade applications and keep growing as an engineer.
-          </p>
-          <a
-            href="/Abhay_Golande_Resume_AI_Engineer.docx"
-            download
-            className="inline-link"
-          >
-            Download Resume <Download size={15} />
-          </a>
+          <div className="section-label">About Me</div>
+          <h2>Who I Am</h2>
         </div>
+        <div className="section-divider-line" />
+        <div className="section-divider-code">PROFILE_DATA</div>
+      </div>
+
+      <div className="about-grid">
+        <div className="about-body">
+          <p>
+            I&apos;m a B.E. Information Technology student at the International Institute of
+            Information Technology, Pune — focused on building AI-powered and full-stack
+            applications.
+          </p>
+          <p>
+            My work spans computer vision, model training and evaluation, RESTful API design,
+            JWT authentication, and MVC architecture. I&apos;m seeking an AI Engineer, ML, GenAI,
+            or full-stack internship role where I can contribute to production-grade applications
+            and keep growing as an engineer.
+          </p>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '4px' }}>
+            <a href="/Abhay_Golande_Resume_AI_Engineer.docx" download className="btn btn-primary">
+              Download Resume <Download size={12} />
+            </a>
+            <a href="#contact" className="btn btn-outline">
+              Get In Touch
+            </a>
+          </div>
+        </div>
+
         <div className="about-highlights">
           <div className="highlight-card">
             <span className="highlight-label">Degree</span>
@@ -169,7 +317,7 @@ function About() {
           </div>
           <div className="highlight-card">
             <span className="highlight-label">Status</span>
-            <span className="highlight-value accent-text">Open to internships</span>
+            <span className="highlight-value accent-text">Open to Internships</span>
           </div>
         </div>
       </div>
@@ -177,21 +325,34 @@ function About() {
   );
 }
 
+/* ─── Skills / Stack ─────────────────────────────────────────────────────── */
 function Skills() {
   return (
     <section id="skills" className="section section-alt">
       <div className="shell">
-        <div className="section-label">Skills</div>
-        <h2 className="section-title">Technologies I work with</h2>
-        <div className="skill-groups">
-          {skillGroups.map((group) => (
-            <div className="skill-row" key={group.label}>
-              <span className="skill-group-label">{group.label}</span>
+        <div className="skills-header">
+          <div>
+            <div className="section-label">TECHNICAL_STACK</div>
+            <h2 className="section-title">
+              Technical<br />Ecosystem
+            </h2>
+          </div>
+          <p className="skills-desc">
+            A production-focused ecosystem spanning AI/ML systems, full-stack web delivery,
+            and cloud operations — built through hands-on projects and academic rigor.
+          </p>
+        </div>
+
+        <div className="skill-cards">
+          {skillGroups.map((group, i) => (
+            <div className="skill-card" key={group.label}>
+              <div className="skill-card-header">
+                <span className="skill-card-title">{group.label}</span>
+                <span className="skill-card-num">0{i + 1}</span>
+              </div>
               <div className="skill-tags">
                 {group.items.map((item) => (
-                  <span className="skill-tag" key={item}>
-                    {item}
-                  </span>
+                  <span className="skill-tag" key={item}>{item}</span>
                 ))}
               </div>
             </div>
@@ -202,47 +363,46 @@ function Skills() {
   );
 }
 
+/* ─── Projects ───────────────────────────────────────────────────────────── */
 function ProjectCard({ project }) {
   const stackItems = project.stack.split('·').map((s) => s.trim());
   return (
     <article className="project-card">
-      <div className="project-card-body">
-        <span className="project-type-tag">{project.type}</span>
-        <h3 className="project-title">{project.title}</h3>
-        <p className="project-desc">{project.description}</p>
-        <div className="project-stack">
-          {stackItems.map((tech) => (
-            <span className="tech-tag" key={tech}>
-              {tech}
-            </span>
+      <div className="project-card-bg" />
+      <div className="project-card-overlay" />
+      <div className="project-card-content">
+        <div className="project-type-tags">
+          <span className="project-cat-tag primary-tag">{project.type}</span>
+          {stackItems.slice(0, 3).map((tech) => (
+            <span className="project-cat-tag stack-tag" key={tech}>{tech}</span>
           ))}
         </div>
-      </div>
-      <div className="project-card-footer">
-        <a
-          href={profile.github}
-          target="_blank"
-          rel="noreferrer"
-          className="btn btn-ghost btn-sm"
-          aria-label="GitHub"
-        >
-          <GitHubIcon size={14} /> GitHub
-        </a>
-        {project.href ? (
+        <h3 className="project-title">{project.title}</h3>
+        <p className="project-desc">{project.description}</p>
+        <div className="project-card-actions">
           <a
-            href={project.href}
+            href={profile.github}
             target="_blank"
             rel="noreferrer"
-            className="btn btn-outline btn-sm"
-            aria-label={`Live demo of ${project.title}`}
+            className="proj-btn proj-btn-secondary"
+            aria-label="GitHub"
           >
-            <ExternalLink size={14} /> Live Demo
+            <GitHubIcon size={11} /> GitHub
           </a>
-        ) : (
-          <span className="btn btn-ghost btn-sm disabled" title="No live demo available">
-            No demo
-          </span>
-        )}
+          {project.href ? (
+            <a
+              href={project.href}
+              target="_blank"
+              rel="noreferrer"
+              className="proj-btn proj-btn-primary"
+              aria-label={`Live demo of ${project.title}`}
+            >
+              Live Demo <ExternalLink size={11} />
+            </a>
+          ) : (
+            <span className="proj-btn proj-btn-secondary disabled">No Demo</span>
+          )}
+        </div>
       </div>
     </article>
   );
@@ -251,9 +411,17 @@ function ProjectCard({ project }) {
 function Projects() {
   return (
     <section id="projects" className="section shell">
-      <div className="section-label">Projects</div>
-      <h2 className="section-title">Selected work</h2>
-      <p className="section-subtitle">A mix of AI/ML, full-stack, and frontend projects.</p>
+      <div className="projects-header">
+        <div>
+          <div className="section-label">SELECTED_WORKS</div>
+          <h2 className="section-title">
+            Featured <span className="accent">Works</span>
+          </h2>
+        </div>
+        <a href={profile.github} target="_blank" rel="noreferrer">
+          Explore full archive →
+        </a>
+      </div>
       <div className="projects-grid">
         {projects.map((project) => (
           <ProjectCard key={project.title} project={project} />
@@ -263,54 +431,64 @@ function Projects() {
   );
 }
 
+/* ─── Experience / Education ─────────────────────────────────────────────── */
 function Experience() {
   return (
     <section id="experience" className="section section-alt">
-      <div className="shell exp-grid">
-        <div>
-          <div className="section-label">Education</div>
-          <h2 className="section-title">Academic background</h2>
-          <div className="timeline">
-            {education.map((item) => (
-              <div className="timeline-item" key={item.degree + item.detail}>
-                <div className="timeline-dot" />
-                <div className="timeline-content">
-                  <p className="timeline-school">{item.school}</p>
-                  <p className="timeline-degree">{item.degree}</p>
-                  <p className="timeline-detail">{item.detail}</p>
-                </div>
-              </div>
-            ))}
+      <div className="shell">
+        <div className="section-divider" style={{ marginBottom: '40px' }}>
+          <div>
+            <div className="section-label">HISTORY_LOG</div>
+            <h2>Education</h2>
           </div>
+          <div className="section-divider-line" />
+          <div className="section-divider-code">ACADEMIC_RECORD</div>
         </div>
-        <div>
-          <div className="section-label">Recognition</div>
-          <h2 className="section-title">Certifications</h2>
-          <ul className="cert-list">
-            {certifications.map((cert) => (
-              <li key={cert} className="cert-item">
-                <span className="cert-dot" />
-                {cert}
-              </li>
-            ))}
-          </ul>
-          <h2 className="section-title" style={{ marginTop: '2rem' }}>
-            Achievements
-          </h2>
-          <ul className="cert-list">
-            {achievements.map((item) => (
-              <li key={item} className="cert-item">
-                <span className="cert-dot" />
-                {item}
-              </li>
-            ))}
-          </ul>
+
+        <div className="exp-timeline">
+          {education.map((item) => (
+            <div className="exp-item" key={item.degree + item.detail}>
+              <div className="exp-header">
+                <div className="exp-org">
+                  {item.school}
+                  <span className="exp-role-badge">{item.degree}</span>
+                </div>
+                <div className="exp-date">{item.detail}</div>
+              </div>
+            </div>
+          ))}
+
+          {/* Certifications block */}
+          <div className="exp-item">
+            <div className="exp-header">
+              <div className="exp-org">
+                Certifications
+                <span className="exp-role-badge">Recognition</span>
+              </div>
+            </div>
+            <div className="exp-highlights">
+              {certifications.map((cert) => (
+                <div className="exp-highlight-card" key={cert}>
+                  <div className="exp-highlight-title">Certificate</div>
+                  <p className="exp-highlight-text">{cert}</p>
+                </div>
+              ))}
+            </div>
+            <div className="exp-tags" style={{ marginTop: '12px' }}>
+              {achievements.map((a) => (
+                <span className="exp-tag" key={a}>
+                  {a.length > 90 ? a.slice(0, 90) + '…' : a}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
+/* ─── Contact ────────────────────────────────────────────────────────────── */
 function Contact() {
   const submit = (e) => {
     e.preventDefault();
@@ -321,103 +499,140 @@ function Contact() {
   };
 
   return (
-    <section id="contact" className="section shell">
-      <div className="section-label">Contact</div>
-      <div className="contact-grid">
-        <div>
-          <h2 className="section-title">Let's connect</h2>
-          <p className="body-text">
-            I'm actively looking for AI, ML, GenAI, and full-stack internship roles. Feel free to
-            reach out — I respond promptly.
-          </p>
-          <div className="contact-links">
-            <a href={`mailto:${profile.email}`} className="contact-link">
-              <Mail size={16} />
-              {profile.email}
-            </a>
-            <a href={`tel:${profile.phone.replace(/\s/g, '')}`} className="contact-link">
-              <Phone size={16} />
-              {profile.phone}
-            </a>
-            <a href={profile.linkedin} target="_blank" rel="noreferrer" className="contact-link">
-              <LinkedInIcon size={16} />
-              LinkedIn
-            </a>
-            <a href={profile.github} target="_blank" rel="noreferrer" className="contact-link">
-              <GitHubIcon size={16} />
-              GitHub
-            </a>
-          </div>
+    <section id="contact" className="contact-section">
+      <div className="contact-glow" />
+      <div className="contact-inner">
+        <div className="section-label" style={{ letterSpacing: '0.28em' }}>
+          Available for opportunities
         </div>
-        <form className="contact-form" onSubmit={submit}>
-          <div className="form-group">
-            <label htmlFor="name">Name</label>
-            <input id="name" name="name" required autoComplete="name" placeholder="Your name" />
-          </div>
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              autoComplete="email"
-              placeholder="your@email.com"
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="message">Message</label>
-            <textarea
-              id="message"
-              name="message"
-              required
-              rows={4}
-              placeholder="What's on your mind?"
-            />
-          </div>
-          <button type="submit" className="btn btn-primary">
-            Send Message <Send size={15} />
-          </button>
-          <p className="form-note">Opens a pre-filled email in your mail app.</p>
-        </form>
+        <h2>Ready to build the next system?</h2>
+        <p>
+          I&apos;m actively looking for AI, ML, GenAI, and full-stack internship roles. Feel
+          free to reach out — I respond promptly.
+        </p>
+
+        {/* Primary email CTA */}
+        <a href={`mailto:${profile.email}`} className="contact-email-btn">
+          {profile.email}
+        </a>
+
+        {/* Secondary links */}
+        <div className="contact-links-row">
+          <a href={`tel:${profile.phone.replace(/\s/g, '')}`} className="contact-link">
+            <Phone size={13} /> {profile.phone}
+          </a>
+          <a href={profile.linkedin} target="_blank" rel="noreferrer" className="contact-link">
+            <LinkedInIcon size={13} /> LinkedIn
+          </a>
+          <a href={profile.github} target="_blank" rel="noreferrer" className="contact-link">
+            <GitHubIcon size={13} /> GitHub
+          </a>
+          <span className="contact-link">
+            <MapPin size={13} /> {profile.location}
+          </span>
+        </div>
+
+        {/* Contact form */}
+        <div className="contact-form-wrap">
+          <form className="contact-form" onSubmit={submit}>
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="cf-name">Name</label>
+                <input id="cf-name" name="name" required autoComplete="name" placeholder="Your name" />
+              </div>
+              <div className="form-group">
+                <label htmlFor="cf-email">Email</label>
+                <input id="cf-email" name="email" type="email" required autoComplete="email" placeholder="your@email.com" />
+              </div>
+            </div>
+            <div className="form-group">
+              <label htmlFor="cf-msg">Message</label>
+              <textarea id="cf-msg" name="message" required rows={4} placeholder="What's on your mind?" />
+            </div>
+            <button type="submit" className="btn btn-primary" style={{ justifyContent: 'center' }}>
+              Send Message <Send size={12} />
+            </button>
+            <p className="form-note">Submitting opens a pre-filled email in your mail app.</p>
+          </form>
+        </div>
       </div>
     </section>
   );
 }
 
+/* ─── Footer ─────────────────────────────────────────────────────────────── */
 function Footer() {
   return (
-    <footer className="footer shell">
-      <span className="nav-logo">
-        AG<span className="accent">.</span>
-      </span>
-      <p className="footer-copy">© {new Date().getFullYear()} Abhay Golande</p>
-      <div className="footer-links">
-        <a href={profile.github} target="_blank" rel="noreferrer" aria-label="GitHub">
-          <GitHubIcon size={17} />
-        </a>
-        <a href={profile.linkedin} target="_blank" rel="noreferrer" aria-label="LinkedIn">
-          <LinkedInIcon size={17} />
-        </a>
-        <a href={`mailto:${profile.email}`} aria-label="Email">
-          <Mail size={17} />
-        </a>
+    <footer className="footer">
+      <div className="shell footer-inner">
+        <div className="footer-brand">
+          <h2>Abhay Golande</h2>
+          <div className="footer-status">
+            <span className="footer-pulse" />
+            Available for Internship Opportunities
+          </div>
+          <p className="footer-desc">
+            B.E. IT student at IIIT Pune building AI-powered and full-stack applications.
+            Passionate about ML, GenAI, system design, and turning complex ideas into
+            production-ready solutions.
+          </p>
+        </div>
+
+        <div>
+          <div className="footer-nav-label">Navigation</div>
+          <ul className="footer-nav-list">
+            {navItems.map((item) => (
+              <li key={item.label}>
+                <a href={item.href}>{item.label}</a>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <div className="footer-nav-label">Social</div>
+          <div className="footer-social">
+            <a href={profile.github} target="_blank" rel="noreferrer" className="footer-social-icon" aria-label="GitHub">
+              <GitHubIcon size={15} />
+            </a>
+            <a href={profile.linkedin} target="_blank" rel="noreferrer" className="footer-social-icon" aria-label="LinkedIn">
+              <LinkedInIcon size={15} />
+            </a>
+            <a href={`mailto:${profile.email}`} className="footer-social-icon" aria-label="Email">
+              <Mail size={15} />
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div className="shell footer-bottom">
+        © {new Date().getFullYear()} Abhay Golande — Built with React + Vite
       </div>
     </footer>
   );
 }
 
+/* ─── App root ───────────────────────────────────────────────────────────── */
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { theme, toggle } = useTheme();
+
   return (
     <>
-      <Navbar open={menuOpen} setOpen={setMenuOpen} />
+      <SideBar />
+      <Navbar
+        open={menuOpen}
+        setOpen={setMenuOpen}
+        theme={theme}
+        toggleTheme={toggle}
+      />
       <main>
         <Hero />
+        <StatsBar />
         <About />
         <Skills />
-        <Projects />
         <Experience />
+        <Projects />
         <Contact />
       </main>
       <Footer />

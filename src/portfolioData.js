@@ -19,11 +19,81 @@ export const skillGroups = [
 ];
 
 export const projects = [
-  { title: "Early Detection of Alzheimer's Disease", type: 'Machine Learning', stack: 'Python · Scikit-learn · TensorFlow · Computer Vision', description: 'A machine learning pipeline for early-stage Alzheimer’s disease prediction using MRI-based image data.', points: ['Applied data preprocessing and feature engineering to improve model accuracy.', 'Trained and evaluated CNN-based and traditional ML classification models.', 'Validated performance using accuracy, precision, recall, and confusion matrix metrics.'] },
-  { title: 'WanderLust', type: 'Travel listing platform', stack: 'Node.js · Express.js · MongoDB · EJS', href: 'https://wanderlust-h1tp.onrender.com/', description: 'A full-stack travel listing platform built around an MVC architecture.', points: ['Handled the request lifecycle from routing through database persistence.', 'Implemented sign-up, login, logout, and session-based access control.', 'Designed 5+ RESTful APIs, review summarization, and personalized destination recommendations.'] },
-  { title: 'Internship Application Platform', type: 'Smart India Hackathon prototype', stack: 'MongoDB · Express.js · React.js · Node.js', description: 'A MERN-based internship platform with AI-powered resume analysis, ATS scoring, and job matching.', points: ['Built JWT authentication and backend workflows.', 'Tested workflows against 100+ simulated user records.', 'Delivered a working prototype within a 24-hour Smart India Hackathon development sprint.'] },
-  { title: 'Spotify UI Clone', type: 'Frontend', stack: 'HTML · CSS',href: 'https://spotify-clone-livid-seven-21.vercel.app/#', description: 'A recreation of Spotify’s web interface with emphasis on layout, typography, and component structure.', points: ['Built 10+ reusable UI components.', 'Used semantic HTML and modular CSS.'] },
-  { title: 'Simon Says Memory Game', type: 'Browser game', stack: 'HTML · CSS · JavaScript', href: 'https://simon-says-game-six-gamma.vercel.app/', description: 'An interactive browser memory game with progressive gameplay.', points: ['Built dynamic sequence generation and input validation.', 'Implemented progressive levels and adaptive AI difficulty based on player performance.'] },
+  {
+    title: 'TRIO HIMS — Healthcare SaaS UI/UX Redesign',
+    type: 'UI/UX · Frontend',
+    stack: 'React.js · CSS3 · Responsive Design · UI/UX',
+    href: 'https://trio-hns.vercel.app/',
+    description: 'A comprehensive UI/UX redesign of a healthcare SaaS platform — TRIO Hospital Information & Management System. Focused on visual hierarchy, interactive module cards, and responsive presentation of hospital software features.',
+    points: [
+      'Designed healthcare-focused interface with improved visual hierarchy and responsive layouts.',
+      'Built interactive hospital management module cards with animated section transitions.',
+      'Implemented a consistent design system based on the product branding.',
+      'Delivered a responsive, professionally polished frontend presentation of hospital software features.',
+    ],
+    featured: false,
+  },
+  {
+    title: 'WanderLust',
+    type: 'Full-Stack · Travel Platform',
+    stack: 'Node.js · Express.js · MongoDB · EJS',
+    href: 'https://wanderlust-h1tp.onrender.com/',
+    description: 'A full-stack travel listing and accommodation platform built around MVC architecture — featuring property listings, user authentication, reviews, and RESTful API design.',
+    points: [
+      'Handled the full request lifecycle from routing through database persistence.',
+      'Implemented sign-up, login, logout, and session-based access control.',
+      'Designed 5+ RESTful APIs, review summarization, and personalized destination recommendations.',
+    ],
+    featured: true,
+  },
+  {
+    title: "Early Detection of Alzheimer's Disease",
+    type: 'Machine Learning',
+    stack: 'Python · Scikit-learn · TensorFlow · Computer Vision',
+    description: "A machine learning pipeline for early-stage Alzheimer's disease prediction using MRI-based image data.",
+    points: [
+      'Applied data preprocessing and feature engineering to improve model accuracy.',
+      'Trained and evaluated CNN-based and traditional ML classification models.',
+      'Validated performance using accuracy, precision, recall, and confusion matrix metrics.',
+    ],
+    featured: false,
+  },
+  {
+    title: 'Internship Application Platform',
+    type: 'Smart India Hackathon',
+    stack: 'MongoDB · Express.js · React.js · Node.js',
+    description: 'A MERN-based internship platform with AI-powered resume analysis, ATS scoring, and job matching — built during SIH.',
+    points: [
+      'Built JWT authentication and backend workflows.',
+      'Tested workflows against 100+ simulated user records.',
+      'Delivered a working prototype within a 24-hour Smart India Hackathon development sprint.',
+    ],
+    featured: false,
+  },
+  {
+    title: 'Spotify UI Clone',
+    type: 'Frontend',
+    stack: 'HTML · CSS',
+    href: 'https://spotify-clone-livid-seven-21.vercel.app/#',
+    description: "A recreation of Spotify's web interface with emphasis on layout, typography, and component structure.",
+    points: [
+      'Built 10+ reusable UI components.',
+      'Used semantic HTML and modular CSS.',
+    ],
+    featured: false,
+  },
+  {
+    title: 'Simon Says Memory Game',
+    type: 'Browser Game',
+    stack: 'HTML · CSS · JavaScript',
+    href: 'https://simon-says-game-six-gamma.vercel.app/',
+    description: 'An interactive browser memory game with progressive gameplay and adaptive difficulty.',
+    points: [
+      'Built dynamic sequence generation and input validation.',
+      'Implemented progressive levels and adaptive AI difficulty based on player performance.',
+    ],
+    featured: false,
+  },
 ];
 
 export const education = [

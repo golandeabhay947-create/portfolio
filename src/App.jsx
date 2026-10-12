@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Mail,
   ExternalLink,
@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Sun,
   Moon,
+  Star,
 } from 'lucide-react';
 import {
   achievements,
@@ -22,7 +23,7 @@ import {
 } from './portfolioData';
 import './styles.css';
 
-/* ─── Inline SVG brand icons (not in this lucide version) ─────────────────── */
+/* ─── Inline SVG brand icons ─────────────────────────────────────────────── */
 function GitHubIcon({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -42,7 +43,6 @@ function LinkedInIcon({ size = 20 }) {
 /* ─── Theme hook ──────────────────────────────────────────────────────────── */
 function useTheme() {
   const [theme, setTheme] = useState(() => {
-    // Initial value from localStorage, or OS preference
     try {
       const stored = localStorage.getItem('ag-theme');
       if (stored) return stored;
@@ -51,21 +51,211 @@ function useTheme() {
       return 'dark';
     }
   });
-
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === 'light') {
-      root.classList.add('light');
-    } else {
-      root.classList.remove('light');
-    }
-    try {
-      localStorage.setItem('ag-theme', theme);
-    } catch { /* ignore */ }
+    if (theme === 'light') root.classList.add('light');
+    else root.classList.remove('light');
+    try { localStorage.setItem('ag-theme', theme); } catch { /* ignore */ }
   }, [theme]);
-
   const toggle = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
   return { theme, toggle };
+}
+
+/* ─── Intersection-observer scroll-reveal hook ───────────────────────────── */
+function useReveal(threshold = 0.12) {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    // Respect prefers-reduced-motion
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setVisible(true);
+      return;
+    }
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect(); } },
+      { threshold }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [threshold]);
+  return [ref, visible];
+}
+
+/* ─── Animated Code Terminal ─────────────────────────────────────────────── */
+const CODE_SNIPPETS = [
+  { lang: 'python', lines: [
+    { t: 'cm', v: '# AI Engineer — Abhay Golande' },
+    { t: 'kw', v: 'import' },     { t: 'plain', v: ' tensorflow as tf' },
+    { t: 'kw', v: 'from' },       { t: 'plain', v: ' sklearn.model_selection ' }, { t: 'kw', v: 'import' }, { t: 'plain', v: ' train_test_split' },
+    { t: 'plain', v: '' },
+    { t: 'kw', v: 'def ' },       { t: 'fn', v: 'build_model' }, { t: 'plain', v: '(input_shape):' },
+    { t: 'plain', v: '  model = tf.keras.' }, { t: 'fn', v: 'Sequential' }, { t: 'plain', v: '([' },
+    { t: 'plain', v: '    tf.keras.layers.' }, { t: 'fn', v: 'Conv2D' }, { t: 'plain', v: '(' }, { t: 'nu', v: '32' }, { t: 'plain', v: ', (' }, { t: 'nu', v: '3' }, { t: 'plain', v: ',' }, { t: 'nu', v: '3' }, { t: 'plain', v: '), activation=' }, { t: 'str', v: "'relu'" }, { t: 'plain', v: '),' },
+    { t: 'plain', v: '    tf.keras.layers.' }, { t: 'fn', v: 'Dense' }, { t: 'plain', v: '(' }, { t: 'nu', v: '2' }, { t: 'plain', v: ', activation=' }, { t: 'str', v: "'softmax'" }, { t: 'plain', v: ')' },
+    { t: 'plain', v: '  ])' },
+    { t: 'kw', v: '  return' }, { t: 'plain', v: ' model' },
+    { t: 'plain', v: '' },
+    { t: 'cm', v: '# Training Alzheimer detection pipeline' },
+    { t: 'plain', v: 'model = ' }, { t: 'fn', v: 'build_model' }, { t: 'plain', v: '((' }, { t: 'nu', v: '224' }, { t: 'plain', v: ',' }, { t: 'nu', v: '224' }, { t: 'plain', v: ',' }, { t: 'nu', v: '3' }, { t: 'plain', v: '))' },
+    { t: 'plain', v: 'model.' }, { t: 'fn', v: 'fit' }, { t: 'plain', v: '(X_train, y_train, epochs=' }, { t: 'nu', v: '20' }, { t: 'plain', v: ')' },
+  ]},
+  { lang: 'javascript', lines: [
+    { t: 'cm', v: '// WanderLust — Full Stack Travel Platform' },
+    { t: 'kw', v: 'const' }, { t: 'plain', v: ' express = ' }, { t: 'fn', v: 'require' }, { t: 'plain', v: '(' }, { t: 'str', v: "'express'" }, { t: 'plain', v: ')' },
+    { t: 'kw', v: 'const' }, { t: 'plain', v: ' mongoose = ' }, { t: 'fn', v: 'require' }, { t: 'plain', v: '(' }, { t: 'str', v: "'mongoose'" }, { t: 'plain', v: ')' },
+    { t: 'plain', v: '' },
+    { t: 'kw', v: 'const' }, { t: 'plain', v: ' app = ' }, { t: 'fn', v: 'express' }, { t: 'plain', v: '()' },
+    { t: 'plain', v: '' },
+    { t: 'cm', v: '// Route: Get all listings' },
+    { t: 'plain', v: 'app.' }, { t: 'fn', v: 'get' }, { t: 'plain', v: '(' }, { t: 'str', v: "'/listings'" }, { t: 'plain', v: ', async (req, res) => {' },
+    { t: 'kw', v: '  const' }, { t: 'plain', v: ' listings = ' }, { t: 'kw', v: 'await' }, { t: 'plain', v: ' Listing.' }, { t: 'fn', v: 'find' }, { t: 'plain', v: '({})' },
+    { t: 'plain', v: '  res.' }, { t: 'fn', v: 'json' }, { t: 'plain', v: '({ success: ' }, { t: 'kw', v: 'true' }, { t: 'plain', v: ', data: listings })' },
+    { t: 'plain', v: '})' },
+    { t: 'plain', v: '' },
+    { t: 'cm', v: '// JWT Auth middleware' },
+    { t: 'kw', v: 'const' }, { t: 'plain', v: ' authenticate = (req, res, next) => {' },
+    { t: 'kw', v: '  const' }, { t: 'plain', v: ' token = req.session.' }, { t: 'fn', v: 'token' },
+    { t: 'kw', v: '  if ' }, { t: 'plain', v: '(!token) ' }, { t: 'kw', v: 'return' }, { t: 'plain', v: ' res.' }, { t: 'fn', v: 'redirect' }, { t: 'plain', v: '(' }, { t: 'str', v: "'/login'" }, { t: 'plain', v: ')' },
+    { t: 'fn', v: '  next' }, { t: 'plain', v: '()' },
+    { t: 'plain', v: '}' },
+  ]},
+  { lang: 'jsx', lines: [
+    { t: 'cm', v: '// TRIO HIMS — Healthcare SaaS UI' },
+    { t: 'kw', v: 'import' }, { t: 'plain', v: ' React, { useState } ' }, { t: 'kw', v: 'from' }, { t: 'plain', v: ' ' }, { t: 'str', v: "'react'" },
+    { t: 'plain', v: '' },
+    { t: 'kw', v: 'function' }, { t: 'plain', v: ' ' }, { t: 'fn', v: 'ModuleCard' }, { t: 'plain', v: '({ title, icon, desc }) {' },
+    { t: 'kw', v: '  const' }, { t: 'plain', v: ' [hovered, setHovered] = ' }, { t: 'fn', v: 'useState' }, { t: 'plain', v: '(' }, { t: 'kw', v: 'false' }, { t: 'plain', v: ')' },
+    { t: 'kw', v: '  return' }, { t: 'plain', v: ' (' },
+    { t: 'plain', v: '    <div' },
+    { t: 'plain', v: '      className=' }, { t: 'str', v: '`module-card ${hovered && "active"}`' },
+    { t: 'plain', v: '      onMouseEnter={() => ' }, { t: 'fn', v: 'setHovered' }, { t: 'plain', v: '(' }, { t: 'kw', v: 'true' }, { t: 'plain', v: ')}' },
+    { t: 'plain', v: '      onMouseLeave={() => ' }, { t: 'fn', v: 'setHovered' }, { t: 'plain', v: '(' }, { t: 'kw', v: 'false' }, { t: 'plain', v: ')}' },
+    { t: 'plain', v: '    >' },
+    { t: 'plain', v: '      <span>{icon}</span>' },
+    { t: 'plain', v: '      <h3>{title}</h3>' },
+    { t: 'plain', v: '      <p>{desc}</p>' },
+    { t: 'plain', v: '    </div>' },
+    { t: 'plain', v: '  )' },
+    { t: 'plain', v: '}' },
+  ]},
+];
+
+function CodeTerminal() {
+  const [snippetIdx, setSnippetIdx] = useState(0);
+  const [displayedLines, setDisplayedLines] = useState([]);
+  const [charPos, setCharPos] = useState(0);  // char position in current line text
+  const [lineIdx, setLineIdx] = useState(0);
+  const [showCursor, setShowCursor] = useState(true);
+  const [phase, setPhase] = useState('typing'); // 'typing' | 'pausing' | 'clearing'
+  const reduceMotion = useRef(
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+
+  const snippet = CODE_SNIPPETS[snippetIdx];
+
+  // Blink cursor
+  useEffect(() => {
+    const id = setInterval(() => setShowCursor((v) => !v), 530);
+    return () => clearInterval(id);
+  }, []);
+
+  // If reduced-motion, show all lines statically
+  useEffect(() => {
+    if (reduceMotion.current) {
+      setDisplayedLines(snippet.lines.map((l) => ({ ...l, full: true })));
+      setPhase('pausing');
+    }
+  }, [snippet]);
+
+  // Type lines one by one
+  useEffect(() => {
+    if (reduceMotion.current) return;
+
+    if (phase === 'typing') {
+      const lines = snippet.lines;
+      if (lineIdx >= lines.length) {
+        setPhase('pausing');
+        return;
+      }
+      const currentLine = lines[lineIdx];
+      const fullText = currentLine.v;
+
+      if (charPos <= fullText.length) {
+        const delay = fullText.length === 0 ? 60 : Math.random() * 30 + 18;
+        const id = setTimeout(() => {
+          setDisplayedLines((prev) => {
+            const next = [...prev];
+            next[lineIdx] = { ...currentLine, v: fullText.slice(0, charPos) };
+            return next;
+          });
+          setCharPos((p) => p + 1);
+        }, delay);
+        return () => clearTimeout(id);
+      } else {
+        // Line complete, move to next
+        const id = setTimeout(() => {
+          setLineIdx((l) => l + 1);
+          setCharPos(0);
+        }, 40);
+        return () => clearTimeout(id);
+      }
+    }
+
+    if (phase === 'pausing') {
+      const id = setTimeout(() => setPhase('clearing'), 2800);
+      return () => clearTimeout(id);
+    }
+
+    if (phase === 'clearing') {
+      const id = setTimeout(() => {
+        setDisplayedLines([]);
+        setLineIdx(0);
+        setCharPos(0);
+        setSnippetIdx((i) => (i + 1) % CODE_SNIPPETS.length);
+        setPhase('typing');
+      }, 400);
+      return () => clearTimeout(id);
+    }
+  }, [phase, lineIdx, charPos, snippet]);
+
+  return (
+    <div className="code-terminal" aria-label="Animated code editor" aria-hidden="true">
+      {/* Terminal chrome */}
+      <div className="terminal-chrome">
+        <span className="t-dot t-red" />
+        <span className="t-dot t-yellow" />
+        <span className="t-dot t-green" />
+        <span className="t-filename">{snippet.lang === 'python' ? 'model.py' : snippet.lang === 'jsx' ? 'ModuleCard.jsx' : 'server.js'}</span>
+      </div>
+      {/* Line numbers + code */}
+      <div className="terminal-body">
+        {displayedLines.map((line, i) => (
+          <div className="t-line" key={i}>
+            <span className="t-linenum">{i + 1}</span>
+            <span className={`t-token t-${line.t}`}>{line.v}</span>
+            {i === displayedLines.length - 1 && phase === 'typing' && (
+              <span className={`t-cursor ${showCursor ? 'visible' : ''}`}>▌</span>
+            )}
+          </div>
+        ))}
+        {/* Cursor on empty state */}
+        {displayedLines.length === 0 && (
+          <div className="t-line">
+            <span className="t-linenum">1</span>
+            <span className={`t-cursor ${showCursor ? 'visible' : ''}`}>▌</span>
+          </div>
+        )}
+      </div>
+      {/* Status bar */}
+      <div className="terminal-status">
+        <span>{snippet.lang === 'python' ? 'Python' : snippet.lang === 'jsx' ? 'JSX' : 'JavaScript'}</span>
+        <span>UTF-8</span>
+        <span>Ln {Math.max(1, displayedLines.length)}</span>
+      </div>
+    </div>
+  );
 }
 
 /* ─── Fixed Left Sidebar ─────────────────────────────────────────────────── */
@@ -100,17 +290,13 @@ const navItems = [
 /* ─── Navbar ─────────────────────────────────────────────────────────────── */
 function Navbar({ open, setOpen, theme, toggleTheme }) {
   const close = () => setOpen(false);
-
   return (
     <header className="navbar">
       <div className="nav-inner">
-        {/* Logo */}
         <a href="#top" className="nav-logo" onClick={close}>
           <span className="nav-logo-arrow">&gt;</span>
           Abhay Golande
         </a>
-
-        {/* Desktop nav links */}
         <nav className="nav-links" aria-label="Main navigation">
           {navItems.map((item) => (
             <a key={item.label} href={item.href} className="nav-link" onClick={close}>
@@ -118,25 +304,17 @@ function Navbar({ open, setOpen, theme, toggleTheme }) {
             </a>
           ))}
         </nav>
-
-        {/* Right controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {/* Let's Connect CTA */}
           <a href="#contact" className="nav-cta" onClick={close}>
             Let&apos;s Connect
           </a>
-
-          {/* Theme toggle */}
           <button
             className="theme-btn"
             aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             onClick={toggleTheme}
-            title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
           >
             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
-
-          {/* Resume download */}
           <a
             href="/Abhay_Golande_Resume_AI_Engineer.docx"
             download
@@ -146,8 +324,6 @@ function Navbar({ open, setOpen, theme, toggleTheme }) {
             <Download size={15} />
             <span className="tooltip">Download Resume</span>
           </a>
-
-          {/* Mobile hamburger */}
           <button
             className="hamburger"
             aria-label={open ? 'Close menu' : 'Open menu'}
@@ -158,8 +334,6 @@ function Navbar({ open, setOpen, theme, toggleTheme }) {
           </button>
         </div>
       </div>
-
-      {/* Mobile menu */}
       {open && (
         <nav className="mobile-menu" aria-label="Mobile navigation">
           {navItems.map((item) => (
@@ -167,10 +341,9 @@ function Navbar({ open, setOpen, theme, toggleTheme }) {
               {item.label} <ChevronRight size={13} />
             </a>
           ))}
-          {/* Theme toggle inside mobile menu */}
           <button
             className="mobile-link"
-            onClick={() => { toggleTheme(); }}
+            onClick={toggleTheme}
             style={{ background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px solid var(--border)', padding: '13px 0', width: '100%', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: 'var(--mono)', fontSize: '12px', fontWeight: 500, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--on-muted)' }}
           >
             {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
@@ -194,25 +367,16 @@ function Navbar({ open, setOpen, theme, toggleTheme }) {
 function Hero() {
   return (
     <section id="top" className="hero shell">
-      {/* Left column */}
-      <div className="hero-left">
-        {/* Badge row */}
+      <div className="hero-left animate-hero-left">
         <div className="hero-badge-row">
           <span className="hero-badge">AI Engineer · Full Stack Developer</span>
           <span className="hero-badge-sep" />
           <span className="hero-badge-status">SYSTEM_READY: TRUE</span>
         </div>
-
-        {/* Name — primary visual anchor */}
         <h1 className="hero-name">
-          ABHAY{' '}
-          <span className="accent">GOLANDE</span>
+          ABHAY <span className="accent">GOLANDE</span>
         </h1>
-
-        {/* Summary */}
         <p className="hero-summary">{profile.summary}</p>
-
-        {/* CTAs */}
         <div className="hero-actions">
           <a href="#projects" className="btn btn-primary">
             View Selected Work <ExternalLink size={13} />
@@ -223,16 +387,10 @@ function Hero() {
         </div>
       </div>
 
-      {/* Right column — engineering workspace image */}
-      <div className="hero-right">
+      <div className="hero-right animate-hero-right">
         <div className="hero-glow" />
         <div className="hero-image-frame">
-          <img
-            src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=900&q=80"
-            alt="Software engineering workspace with code on screen"
-            loading="eager"
-            decoding="async"
-          />
+          <CodeTerminal />
           <div className="hero-image-caption">
             <p>LOC: Pune, MH</p>
             <p>UTC +5:30</p>
@@ -245,12 +403,13 @@ function Hero() {
 
 /* ─── Stats Bar ──────────────────────────────────────────────────────────── */
 function StatsBar() {
+  const [ref, visible] = useReveal(0.1);
   return (
-    <div className="stats-bar shell">
+    <div ref={ref} className={`stats-bar shell reveal ${visible ? 'revealed' : ''}`}>
       <div className="stat-item">
-        <div className="stat-value">5+</div>
+        <div className="stat-value">7+</div>
         <div className="stat-label">Projects Shipped</div>
-        <p className="stat-desc">AI/ML, full-stack, and frontend projects delivered.</p>
+        <p className="stat-desc">AI/ML, full-stack, UI/UX, and frontend projects delivered.</p>
       </div>
       <div className="stat-item">
         <div className="stat-value">9.33</div>
@@ -268,8 +427,9 @@ function StatsBar() {
 
 /* ─── About ──────────────────────────────────────────────────────────────── */
 function About() {
+  const [ref, visible] = useReveal();
   return (
-    <section id="about" className="section shell">
+    <section id="about" className={`section shell reveal ${visible ? 'revealed' : ''}`} ref={ref}>
       <div className="section-divider">
         <div>
           <div className="section-label">About Me</div>
@@ -278,7 +438,6 @@ function About() {
         <div className="section-divider-line" />
         <div className="section-divider-code">PROFILE_DATA</div>
       </div>
-
       <div className="about-grid">
         <div className="about-body">
           <p>
@@ -296,29 +455,21 @@ function About() {
             <a href="/Abhay_Golande_Resume_AI_Engineer.docx" download className="btn btn-primary">
               Download Resume <Download size={12} />
             </a>
-            <a href="#contact" className="btn btn-outline">
-              Get In Touch
-            </a>
+            <a href="#contact" className="btn btn-outline">Get In Touch</a>
           </div>
         </div>
-
         <div className="about-highlights">
-          <div className="highlight-card">
-            <span className="highlight-label">Degree</span>
-            <span className="highlight-value">B.E. Information Technology</span>
-          </div>
-          <div className="highlight-card">
-            <span className="highlight-label">CGPA</span>
-            <span className="highlight-value">9.33 / 10</span>
-          </div>
-          <div className="highlight-card">
-            <span className="highlight-label">Focus</span>
-            <span className="highlight-value">AI / ML · Full Stack</span>
-          </div>
-          <div className="highlight-card">
-            <span className="highlight-label">Status</span>
-            <span className="highlight-value accent-text">Open to Internships</span>
-          </div>
+          {[
+            { label: 'Degree', value: 'B.E. Information Technology' },
+            { label: 'CGPA', value: '9.33 / 10' },
+            { label: 'Focus', value: 'AI / ML · Full Stack' },
+            { label: 'Status', value: 'Open to Internships', accent: true },
+          ].map(({ label, value, accent }, i) => (
+            <div className="highlight-card" key={label} style={{ animationDelay: `${i * 80}ms` }}>
+              <span className="highlight-label">{label}</span>
+              <span className={`highlight-value${accent ? ' accent-text' : ''}`}>{value}</span>
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -327,32 +478,32 @@ function About() {
 
 /* ─── Skills / Stack ─────────────────────────────────────────────────────── */
 function Skills() {
+  const [ref, visible] = useReveal();
   return (
     <section id="skills" className="section section-alt">
-      <div className="shell">
+      <div ref={ref} className={`shell reveal ${visible ? 'revealed' : ''}`}>
         <div className="skills-header">
           <div>
             <div className="section-label">TECHNICAL_STACK</div>
-            <h2 className="section-title">
-              Technical<br />Ecosystem
-            </h2>
+            <h2 className="section-title">Technical<br />Ecosystem</h2>
           </div>
           <p className="skills-desc">
             A production-focused ecosystem spanning AI/ML systems, full-stack web delivery,
             and cloud operations — built through hands-on projects and academic rigor.
           </p>
         </div>
-
         <div className="skill-cards">
           {skillGroups.map((group, i) => (
-            <div className="skill-card" key={group.label}>
+            <div className="skill-card" key={group.label} style={{ animationDelay: `${i * 70}ms` }}>
               <div className="skill-card-header">
                 <span className="skill-card-title">{group.label}</span>
                 <span className="skill-card-num">0{i + 1}</span>
               </div>
               <div className="skill-tags">
-                {group.items.map((item) => (
-                  <span className="skill-tag" key={item}>{item}</span>
+                {group.items.map((item, j) => (
+                  <span className="skill-tag" key={item} style={{ animationDelay: `${i * 70 + j * 30}ms` }}>
+                    {item}
+                  </span>
                 ))}
               </div>
             </div>
@@ -364,12 +515,26 @@ function Skills() {
 }
 
 /* ─── Projects ───────────────────────────────────────────────────────────── */
-function ProjectCard({ project }) {
+function ProjectCard({ project, index }) {
+  const [ref, visible] = useReveal(0.08);
   const stackItems = project.stack.split('·').map((s) => s.trim());
+
   return (
-    <article className="project-card">
+    <article
+      ref={ref}
+      className={`project-card${project.featured ? ' project-card--featured' : ''} reveal ${visible ? 'revealed' : ''}`}
+      style={{ animationDelay: `${(index % 3) * 100}ms` }}
+    >
+      {/* Featured badge */}
+      {project.featured && (
+        <div className="project-featured-badge">
+          <Star size={10} /> Major Project
+        </div>
+      )}
+
       <div className="project-card-bg" />
       <div className="project-card-overlay" />
+
       <div className="project-card-content">
         <div className="project-type-tags">
           <span className="project-cat-tag primary-tag">{project.type}</span>
@@ -380,23 +545,17 @@ function ProjectCard({ project }) {
         <h3 className="project-title">{project.title}</h3>
         <p className="project-desc">{project.description}</p>
         <div className="project-card-actions">
-          <a
-            href={profile.github}
-            target="_blank"
-            rel="noreferrer"
-            className="proj-btn proj-btn-secondary"
-            aria-label="GitHub"
-          >
-            <GitHubIcon size={11} /> GitHub
-          </a>
+          {project.github ? (
+            <a href={project.github} target="_blank" rel="noreferrer" className="proj-btn proj-btn-secondary">
+              <GitHubIcon size={11} /> GitHub
+            </a>
+          ) : (
+            <a href={profile.github} target="_blank" rel="noreferrer" className="proj-btn proj-btn-secondary">
+              <GitHubIcon size={11} /> GitHub
+            </a>
+          )}
           {project.href ? (
-            <a
-              href={project.href}
-              target="_blank"
-              rel="noreferrer"
-              className="proj-btn proj-btn-primary"
-              aria-label={`Live demo of ${project.title}`}
-            >
+            <a href={project.href} target="_blank" rel="noreferrer" className="proj-btn proj-btn-primary">
               Live Demo <ExternalLink size={11} />
             </a>
           ) : (
@@ -409,9 +568,10 @@ function ProjectCard({ project }) {
 }
 
 function Projects() {
+  const [headerRef, headerVisible] = useReveal(0.1);
   return (
     <section id="projects" className="section shell">
-      <div className="projects-header">
+      <div ref={headerRef} className={`projects-header reveal ${headerVisible ? 'revealed' : ''}`}>
         <div>
           <div className="section-label">SELECTED_WORKS</div>
           <h2 className="section-title">
@@ -423,8 +583,8 @@ function Projects() {
         </a>
       </div>
       <div className="projects-grid">
-        {projects.map((project) => (
-          <ProjectCard key={project.title} project={project} />
+        {projects.map((project, i) => (
+          <ProjectCard key={project.title} project={project} index={i} />
         ))}
       </div>
     </section>
@@ -433,9 +593,10 @@ function Projects() {
 
 /* ─── Experience / Education ─────────────────────────────────────────────── */
 function Experience() {
+  const [ref, visible] = useReveal();
   return (
     <section id="experience" className="section section-alt">
-      <div className="shell">
+      <div ref={ref} className={`shell reveal ${visible ? 'revealed' : ''}`}>
         <div className="section-divider" style={{ marginBottom: '40px' }}>
           <div>
             <div className="section-label">HISTORY_LOG</div>
@@ -444,10 +605,9 @@ function Experience() {
           <div className="section-divider-line" />
           <div className="section-divider-code">ACADEMIC_RECORD</div>
         </div>
-
         <div className="exp-timeline">
-          {education.map((item) => (
-            <div className="exp-item" key={item.degree + item.detail}>
+          {education.map((item, i) => (
+            <div className="exp-item" key={item.degree + item.detail} style={{ animationDelay: `${i * 100}ms` }}>
               <div className="exp-header">
                 <div className="exp-org">
                   {item.school}
@@ -457,9 +617,7 @@ function Experience() {
               </div>
             </div>
           ))}
-
-          {/* Certifications block */}
-          <div className="exp-item">
+          <div className="exp-item" style={{ animationDelay: '300ms' }}>
             <div className="exp-header">
               <div className="exp-org">
                 Certifications
@@ -490,6 +648,7 @@ function Experience() {
 
 /* ─── Contact ────────────────────────────────────────────────────────────── */
 function Contact() {
+  const [ref, visible] = useReveal();
   const submit = (e) => {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
@@ -497,26 +656,14 @@ function Contact() {
     const body = `Name: ${data.get('name')}\nEmail: ${data.get('email')}\n\n${data.get('message')}`;
     window.location.href = `mailto:${profile.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
-
   return (
     <section id="contact" className="contact-section">
       <div className="contact-glow" />
-      <div className="contact-inner">
-        <div className="section-label" style={{ letterSpacing: '0.28em' }}>
-          Available for opportunities
-        </div>
+      <div ref={ref} className={`contact-inner reveal ${visible ? 'revealed' : ''}`}>
+        <div className="section-label" style={{ letterSpacing: '0.28em' }}>Available for opportunities</div>
         <h2>Ready to build the next system?</h2>
-        <p>
-          I&apos;m actively looking for AI, ML, GenAI, and full-stack internship roles. Feel
-          free to reach out — I respond promptly.
-        </p>
-
-        {/* Primary email CTA */}
-        <a href={`mailto:${profile.email}`} className="contact-email-btn">
-          {profile.email}
-        </a>
-
-        {/* Secondary links */}
+        <p>I&apos;m actively looking for AI, ML, GenAI, and full-stack internship roles. Feel free to reach out — I respond promptly.</p>
+        <a href={`mailto:${profile.email}`} className="contact-email-btn">{profile.email}</a>
         <div className="contact-links-row">
           <a href={`tel:${profile.phone.replace(/\s/g, '')}`} className="contact-link">
             <Phone size={13} /> {profile.phone}
@@ -527,12 +674,8 @@ function Contact() {
           <a href={profile.github} target="_blank" rel="noreferrer" className="contact-link">
             <GitHubIcon size={13} /> GitHub
           </a>
-          <span className="contact-link">
-            <MapPin size={13} /> {profile.location}
-          </span>
+          <span className="contact-link"><MapPin size={13} /> {profile.location}</span>
         </div>
-
-        {/* Contact form */}
         <div className="contact-form-wrap">
           <form className="contact-form" onSubmit={submit}>
             <div className="form-row">
@@ -577,18 +720,14 @@ function Footer() {
             production-ready solutions.
           </p>
         </div>
-
         <div>
           <div className="footer-nav-label">Navigation</div>
           <ul className="footer-nav-list">
             {navItems.map((item) => (
-              <li key={item.label}>
-                <a href={item.href}>{item.label}</a>
-              </li>
+              <li key={item.label}><a href={item.href}>{item.label}</a></li>
             ))}
           </ul>
         </div>
-
         <div>
           <div className="footer-nav-label">Social</div>
           <div className="footer-social">
@@ -604,7 +743,6 @@ function Footer() {
           </div>
         </div>
       </div>
-
       <div className="shell footer-bottom">
         © {new Date().getFullYear()} Abhay Golande — Built with React + Vite
       </div>
@@ -612,20 +750,14 @@ function Footer() {
   );
 }
 
-/* ─── App root ───────────────────────────────────────────────────────────── */
+/* ─── App ────────────────────────────────────────────────────────────────── */
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { theme, toggle } = useTheme();
-
   return (
     <>
       <SideBar />
-      <Navbar
-        open={menuOpen}
-        setOpen={setMenuOpen}
-        theme={theme}
-        toggleTheme={toggle}
-      />
+      <Navbar open={menuOpen} setOpen={setMenuOpen} theme={theme} toggleTheme={toggle} />
       <main>
         <Hero />
         <StatsBar />
